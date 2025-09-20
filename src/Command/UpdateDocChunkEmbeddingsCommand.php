@@ -23,7 +23,7 @@ class UpdateDocChunkEmbeddingsCommand extends Command
         private readonly Connection $connection,
         private readonly OllamaEmbeddingClient $embeddingClient,
         private readonly VectorFormatter $vectorFormatter,
-        #[Autowire('%env(string:EMBEDDING_MODEL)%')]
+        #[Autowire('%env(EMBEDDING_MODEL)%')]
         private readonly string $embeddingModel,
     ) {
         parent::__construct();

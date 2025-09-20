@@ -12,7 +12,7 @@ class OllamaEmbeddingClient
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
-        #[Autowire('%env(default:http://ollama:11434:string:OLLAMA_BASE_URI)%')]
+        #[Autowire('%env(OLLAMA_BASE_URI)%')]
         string $baseUri,
     ) {
         $this->endpoint = rtrim($baseUri, '/');

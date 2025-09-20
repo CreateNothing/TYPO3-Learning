@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4577a063ed2890f728c15349a0d210d9",
+    "content-hash": "db4f904dccf35fe66007a74e02b257b1",
     "packages": [
         {
             "name": "composer/semver",
@@ -1273,6 +1273,57 @@
                 }
             ],
             "time": "2025-03-06T22:45:56+00:00"
+        },
+        {
+            "name": "jdecool/ollama-client",
+            "version": "0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jdecool/ollama-php-client.git",
+                "reference": "040ed0803e2b73bbc5e14b441e59c55bacfd0559"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jdecool/ollama-php-client/zipball/040ed0803e2b73bbc5e14b441e59c55bacfd0559",
+                "reference": "040ed0803e2b73bbc5e14b441e59c55bacfd0559",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1",
+                "psr/log": "^3.0",
+                "symfony/http-client": "^5.4 || ^6.0 || ^7.0"
+            },
+            "require-dev": {
+                "ergebnis/composer-normalize": "^2.41",
+                "friendsofphp/php-cs-fixer": "^3.47",
+                "nyholm/psr7": "^1.8",
+                "php-http/guzzle7-adapter": "^1.0",
+                "php-http/mock-client": "^1.6",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "JDecool\\OllamaClient\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jérémy DECOOL",
+                    "email": "contact@jdecool.fr"
+                }
+            ],
+            "description": "Ollama PHP API client",
+            "support": {
+                "issues": "https://github.com/jdecool/ollama-php-client/issues",
+                "source": "https://github.com/jdecool/ollama-php-client/tree/0.1.0"
+            },
+            "time": "2024-05-04T18:36:01+00:00"
         },
         {
             "name": "monolog/monolog",

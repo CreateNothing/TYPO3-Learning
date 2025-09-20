@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Sample Documentation</title>
+</head>
+<body>
+<main role="main">
+    <h1 id="introduction">Introduction</h1>
+    <p>Welcome to TYPO3 documentation.</p>
+    <p><strong>Goal:</strong> explain vector workflows.</p>
+    <h2 id="install">Install</h2>
+    <p>Use <code>ddev start</code> to bootstrap services.</p>
+    <ul>
+        <li>Clone repo</li>
+        <li>Run composer install</li>
+    </ul>
+    <h3 id="requirements">Requirements</h3>
+    <p>PHP 8.2 and Postgres 16.</p>
+    <blockquote>
+        <p>Ensure pgvector extension is installed.</p>
+    </blockquote>
+    <pre><code class="language-bash">ddev exec bin/console doctrine:migrations:migrate -n</code></pre>
+</main>
+</body>
+</html>

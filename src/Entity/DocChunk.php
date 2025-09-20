@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DocChunkRepository::class)]
+#[ORM\Table(name: 'doc_chunks')]
 class DocChunk
 {
     #[ORM\Id]
@@ -26,6 +27,9 @@ class DocChunk
     #[ORM\Column(length: 16)]
     private ?string $lang = null;
 
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $license = null;
+
     #[ORM\Column(length: 255)]
     private ?string $title = null;
 
@@ -35,8 +39,19 @@ class DocChunk
     #[ORM\Column(type: Types::TEXT)]
     private ?string $contentMd = null;
 
-    #[ORM\Column]
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $embeddingRef = null;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $payload = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $createdAt = null;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
@@ -91,6 +106,18 @@ class DocChunk
         return $this;
     }
 
+    public function getLicense(): ?string
+    {
+        return $this->license;
+    }
+
+    public function setLicense(?string $license): static
+    {
+        $this->license = $license;
+
+        return $this;
+    }
+
     public function getTitle(): ?string
     {
         return $this->title;
@@ -123,6 +150,30 @@ class DocChunk
     public function setContentMd(string $contentMd): static
     {
         $this->contentMd = $contentMd;
+
+        return $this;
+    }
+
+    public function getEmbeddingRef(): ?string
+    {
+        return $this->embeddingRef;
+    }
+
+    public function setEmbeddingRef(?string $embeddingRef): static
+    {
+        $this->embeddingRef = $embeddingRef;
+
+        return $this;
+    }
+
+    public function getPayload(): ?array
+    {
+        return $this->payload;
+    }
+
+    public function setPayload(?array $payload): static
+    {
+        $this->payload = $payload;
 
         return $this;
     }

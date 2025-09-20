@@ -1,0 +1,377 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Standalone-Exporter: RST → AST → JSONL (eine Zeile pro Abschnitt)
+ * Läuft isoliert gegen vendor-bin/guides/vendor/autoload.php
+ */
+
+require __DIR__ . '/../vendor-bin/guides/vendor/autoload.php';
+
+define('EXIT_INVALID_USAGE', 1);
+
+define('EXIT_RUNTIME_FAILURE', 2);
+
+use phpDocumentor\FileSystem\FlySystemAdapter as GuidesFsAdapter;
+use phpDocumentor\Guides\Parser as GuidesParser;
+use phpDocumentor\Guides\ReferenceResolvers\DocumentNameResolver;
+use phpDocumentor\Guides\RestructuredText\MarkupLanguageParser as RstParser;
+use phpDocumentor\Guides\RestructuredText\Parser\DocumentParserContextFactory;
+use phpDocumentor\Guides\RestructuredText\TextRoles\TextRoleFactory;
+use Symfony\Component\Finder\Finder;
+
+if ($argc < 3) {
+    fwrite(STDERR, sprintf(
+        "Usage: %s <inDir> <outFile> [--glob=*.rst] [--initial-header-level=2] [--relative-root=<path>]" . PHP_EOL,
+        $argv[0],
+    ));
+
+    exit(EXIT_INVALID_USAGE);
+}
+
+$inDir = rtrim($argv[1], '/');
+$outFile = $argv[2];
+$glob = '*.rst';
+$initialHeaderLevel = 2;
+$relativeRoot = '';
+
+foreach (array_slice($argv, 3) as $opt) {
+    if (str_starts_with($opt, '--glob=')) {
+        $glob = substr($opt, 7);
+
+        continue;
+    }
+
+    if (str_starts_with($opt, '--initial-header-level=')) {
+        $initialHeaderLevel = (int) substr($opt, 24);
+
+        continue;
+    }
+
+    if (str_starts_with($opt, '--relative-root=')) {
+        $relativeRoot = rtrim(substr($opt, 16), '/');
+
+        continue;
+    }
+}
+
+if (!is_dir($inDir)) {
+    fwrite(STDERR, sprintf('Input directory "%s" not found.' . PHP_EOL, $inDir));
+    exit(EXIT_RUNTIME_FAILURE);
+}
+
+$directory = dirname($outFile);
+
+if (!is_dir($directory) && !@mkdir($directory, 0777, true) && !is_dir($directory)) {
+    fwrite(STDERR, sprintf('Unable to create output directory "%s".' . PHP_EOL, $directory));
+    exit(EXIT_RUNTIME_FAILURE);
+}
+
+$fh = fopen($outFile, 'wb');
+
+if ($fh === false) {
+    fwrite(STDERR, sprintf('Unable to open output file "%s" for writing.' . PHP_EOL, $outFile));
+    exit(EXIT_RUNTIME_FAILURE);
+}
+
+$finder = (new Finder())
+    ->files()
+    ->in($inDir)
+    ->name($glob)
+    ->sortByName();
+
+$documentNameResolver = new DocumentNameResolver();
+$rstContextFactory = new DocumentParserContextFactory(new TextRoleFactory());
+$rstParser = new RstParser(new class() {
+}, $rstContextFactory);
+$parser = new GuidesParser($documentNameResolver, [$rstParser]);
+$origin = GuidesFsAdapter::createForPath($inDir);
+
+$slug = static function (string $value): string {
+    $value = strtolower(trim($value));
+    $value = preg_replace('~[^\pL\d]+~u', '-', $value) ?? $value;
+    $value = trim($value, '-');
+    $value = preg_replace('~-+~', '-', $value) ?? $value;
+
+    return $value !== '' ? $value : 'section';
+};
+
+$isNode = static function ($node, array $classNames): bool {
+    foreach ($classNames as $fqcn) {
+        if (is_object($node) && is_a($node, $fqcn, true)) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+$children = static function (object $node) use (&$children): iterable {
+    if (method_exists($node, 'getChildren')) {
+        foreach ((array) $node->getChildren() as $child) {
+            if (is_object($child)) {
+                yield $child;
+            }
+        }
+    }
+
+    if (method_exists($node, 'getValue')) {
+        $value = $node->getValue();
+
+        if (is_iterable($value)) {
+            foreach ($value as $child) {
+                if (is_object($child)) {
+                    yield $child;
+                }
+            }
+        }
+    }
+};
+
+$textOf = static function (object $node) use (&$children, &$textOf): string {
+    foreach (['getValue', 'getText', 'getContent'] as $method) {
+        if (method_exists($node, $method)) {
+            $value = $node->$method();
+
+            if (is_string($value)) {
+                return $value;
+            }
+        }
+    }
+
+    $parts = [];
+
+    foreach ($children($node) as $child) {
+        $parts[] = $textOf($child);
+    }
+
+    return trim(implode(' ', array_filter($parts)));
+};
+
+$collectContent = static function (object $node, array &$collector) use (&$isNode, &$children, &$textOf): void {
+    if ($isNode($node, ['phpDocumentor\\Guides\\Nodes\\ParagraphNode'])) {
+        $collector['paragraphs'][] = $textOf($node);
+
+        return;
+    }
+
+    if ($isNode($node, ['phpDocumentor\\Guides\\Nodes\\AdmonitionNode'])) {
+        $type = null;
+
+        foreach (['getName', 'getType'] as $method) {
+            if (method_exists($node, $method)) {
+                $type = (string) $node->$method();
+                break;
+            }
+        }
+
+        $collector['admonitions'][] = [
+            'type' => $type ?: 'admonition',
+            'text' => $textOf($node),
+        ];
+
+        return;
+    }
+
+    if ($isNode($node, ['phpDocumentor\\Guides\\Nodes\\CodeNode', 'phpDocumentor\\Guides\\Nodes\\LiteralBlockNode'])) {
+        $language = null;
+
+        foreach (['getLanguage', 'getLanguageAlias'] as $method) {
+            if (method_exists($node, $method)) {
+                $language = $node->$method();
+                break;
+            }
+        }
+
+        $code = '';
+
+        foreach (['getValue', 'getCode'] as $method) {
+            if (method_exists($node, $method)) {
+                $value = $node->$method();
+
+                if (is_string($value)) {
+                    $code = $value;
+
+                    break;
+                }
+            }
+        }
+
+        $collector['code_blocks'][] = [
+            'language' => $language,
+            'code' => $code,
+        ];
+
+        return;
+    }
+
+    if ($isNode($node, [
+        'phpDocumentor\\Guides\\Nodes\\Inline\\HyperLinkNode',
+        'phpDocumentor\\Guides\\Nodes\\Inline\\ReferenceNode',
+        'phpDocumentor\\Guides\\Nodes\\Inline\\CrossReferenceNode',
+    ])) {
+        $url = null;
+
+        foreach (['getUrl', 'getReference'] as $method) {
+            if (method_exists($node, $method)) {
+                $candidate = $node->$method();
+
+                if (is_string($candidate)) {
+                    $url = $candidate;
+                    break;
+                }
+            }
+        }
+
+        if ($url !== null) {
+            $collector['links'][] = [
+                'type' => str_starts_with($url, 'http') ? 'external' : 'internal',
+                'url' => $url,
+                'text' => $textOf($node),
+            ];
+        }
+
+        return;
+    }
+
+    foreach ($children($node) as $child) {
+        $collectContent($child, $collector);
+    }
+};
+
+$recordsFromDocument = static function (object $documentNode, array $base) use (&$children, &$isNode, &$textOf, &$collectContent, $slug): array {
+    $records = [];
+    $stack = [];
+
+    $walk = static function (object $node) use (&$walk, &$records, &$stack, $base, &$children, &$isNode, &$collectContent, $slug): void {
+        if ($isNode($node, ['phpDocumentor\\Guides\\Nodes\\SectionNode'])) {
+            $title = null;
+
+            foreach ($children($node) as $child) {
+                if ($isNode($child, ['phpDocumentor\\Guides\\Nodes\\TitleNode'])) {
+                    foreach (['getValue', 'getText'] as $method) {
+                        if (method_exists($child, $method)) {
+                            $candidate = $child->$method();
+
+                            if (is_string($candidate)) {
+                                $title = trim($candidate);
+                                break;
+                            }
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            $identifier = null;
+
+            foreach (['getId', 'getIdentifier'] as $method) {
+                if (method_exists($node, $method)) {
+                    $candidate = $node->$method();
+
+                    if (is_string($candidate) && $candidate !== '') {
+                        $identifier = $candidate;
+                        break;
+                    }
+                }
+            }
+
+            $identifier = $identifier ?: $slug($title ?: 'section');
+
+            if ($title !== null) {
+                $stack[] = $title;
+            }
+
+            $collector = [
+                'paragraphs' => [],
+                'code_blocks' => [],
+                'admonitions' => [],
+                'links' => [],
+            ];
+
+            foreach ($children($node) as $child) {
+                $collectContent($child, $collector);
+            }
+
+            $records[] = [
+                'doc_path' => $base['doc_path'] ?? null,
+                'section_id' => $identifier,
+                'title' => $title,
+                'breadcrumbs' => array_values(array_filter($stack, static fn ($value) => $value !== '')),
+                'body_text' => trim(implode("\n\n", $collector['paragraphs'])),
+                'code_blocks' => array_values($collector['code_blocks']),
+                'admonitions' => array_values($collector['admonitions']),
+                'links' => array_values($collector['links']),
+            ];
+
+            foreach ($children($node) as $child) {
+                if ($isNode($child, ['phpDocumentor\\Guides\\Nodes\\SectionNode'])) {
+                    $walk($child);
+                }
+            }
+
+            if ($title !== null) {
+                array_pop($stack);
+            }
+
+            return;
+        }
+
+        foreach ($children($node) as $child) {
+            $walk($child);
+        }
+    };
+
+    $walk($documentNode);
+
+    if ($records === []) {
+        $collector = [
+            'paragraphs' => [],
+            'code_blocks' => [],
+            'admonitions' => [],
+            'links' => [],
+        ];
+
+        foreach ($children($documentNode) as $child) {
+            $collectContent($child, $collector);
+        }
+
+        $records[] = [
+            'doc_path' => $base['doc_path'] ?? null,
+            'section_id' => $slug(basename((string)($base['doc_path'] ?? 'document'))),
+            'title' => 'Document',
+            'breadcrumbs' => [],
+            'body_text' => trim(implode("\n\n", $collector['paragraphs'])),
+            'code_blocks' => array_values($collector['code_blocks']),
+            'admonitions' => array_values($collector['admonitions']),
+            'links' => array_values($collector['links']),
+        ];
+    }
+
+    return $records;
+};
+
+foreach ($finder as $file) {
+    $relativePath = ltrim(str_replace($inDir, '', $file->getPathname()), '/');
+
+    if ($relativeRoot !== '' && str_starts_with($relativePath, $relativeRoot . '/')) {
+        $docPath = substr($relativePath, strlen($relativeRoot) + 1);
+    } else {
+        $docPath = $relativePath;
+    }
+
+    $parser->prepare($origin, $file->getPath(), $file->getFilename(), null, $initialHeaderLevel);
+    $contents = file_get_contents($file->getPathname()) ?: '';
+    $documentNode = $parser->parse($contents, 'rst');
+
+    $records = $recordsFromDocument($documentNode, ['doc_path' => $docPath]);
+
+    foreach ($records as $record) {
+        fwrite($fh, json_encode($record, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL);
+    }
+}
+
+fclose($fh);

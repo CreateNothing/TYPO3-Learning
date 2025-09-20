@@ -2,17 +2,27 @@
 
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-class HomeController
+class HomeController extends AbstractController
 {
     #[Route('/', name: 'app_home', methods: ['GET'])]
-    public function __invoke(): JsonResponse
+    public function index(): Response
     {
-        return new JsonResponse([
-            'status' => 'ok',
-            'message' => 'TYPO3 Learning Platform API root',
-        ]);
+        return $this->render('home/index.html.twig');
+    }
+
+    #[Route('/battle', name: 'app_battle', methods: ['GET'])]
+    public function battle(): Response
+    {
+        return $this->render('home/battle.html.twig');
+    }
+
+    #[Route('/learning', name: 'app_learning', methods: ['GET'])]
+    public function learning(): Response
+    {
+        return $this->render('home/learning.html.twig');
     }
 }

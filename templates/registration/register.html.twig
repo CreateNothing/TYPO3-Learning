@@ -1,0 +1,153 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create Account · TYPO3 Learning Platform{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .auth-card {
+            display: grid;
+            gap: 2rem;
+        }
+        .auth-card__intro {
+            display: grid;
+            gap: 0.9rem;
+        }
+        .auth-card__intro h1 {
+            margin: 0;
+            font-size: clamp(2rem, 2.5vw + 1rem, 2.75rem);
+        }
+        .auth-card__intro p {
+            margin: 0;
+            color: rgba(226, 232, 240, 0.82);
+            line-height: 1.6;
+        }
+        .auth-card__form {
+            display: grid;
+            gap: 1.5rem;
+        }
+        .auth-card__form > div {
+            display: grid;
+            gap: 0.55rem;
+        }
+        .auth-card__form label {
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .auth-input {
+            padding: 0.85rem 1rem;
+            border-radius: 0.85rem;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(15, 23, 42, 0.85);
+            color: inherit;
+            transition: border 0.2s ease, box-shadow 0.2s ease;
+        }
+        .auth-input:focus {
+            outline: none;
+            border-color: rgba(59, 130, 246, 0.6);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        .auth-card__form .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 0.9rem 1rem;
+            border-radius: 0.9rem;
+            border: 1px dashed rgba(148, 163, 184, 0.45);
+        }
+        .auth-card__form .form-check-input {
+            width: 1rem;
+            height: 1rem;
+            accent-color: #3b82f6;
+        }
+        .auth-card__form .form-check-label {
+            font-weight: 500;
+            color: rgba(226, 232, 240, 0.82);
+        }
+        .auth-card__form .form-error-message,
+        .auth-card__form ul {
+            margin: 0;
+            padding-left: 1.2rem;
+            color: rgba(248, 113, 113, 0.95);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+        .auth-card__form .form-text {
+            margin: 0;
+            color: rgba(148, 176, 228, 0.82);
+            font-size: 0.85rem;
+        }
+        .auth-card__actions {
+            display: grid;
+            gap: 1rem;
+        }
+        .auth-card__actions button {
+            justify-self: start;
+        }
+        .auth-card__actions a {
+            color: rgba(96, 165, 250, 0.95);
+            text-decoration: underline;
+        }
+        .flash-inline {
+            margin-bottom: 1.25rem;
+            padding: 0.9rem 1.05rem;
+            border-radius: 0.85rem;
+            border: 1px solid rgba(248, 113, 113, 0.45);
+            background: rgba(239, 68, 68, 0.16);
+        }
+        @media (max-width: 720px) {
+            .auth-card__actions button {
+                width: 100%;
+                justify-self: stretch;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    {% for flash_error in app.flashes('verify_email_error') %}
+        <div class="flash-inline" role="alert">{{ flash_error }}</div>
+    {% endfor %}
+
+    <div class="auth-card">
+        <div class="auth-card__intro">
+            <div class="pill">Create Your Account</div>
+            <h1>Unlock the TYPO3 learning arena</h1>
+            <p>
+                Register with your email address to access guided challenges, AI-assisted study plans, and
+                community battle stats. A confirmation link will be sent to verify your account.
+            </p>
+        </div>
+
+        {{ form_start(registrationForm, {
+            attr: { class: 'auth-card__form' }
+        }) }}
+            {{ form_row(registrationForm.handle, {
+                label: 'Handle',
+                row_attr: { class: 'form-group' },
+                attr: { placeholder: 'typo3-wizard', class: 'auth-input' }
+            }) }}
+            {{ form_row(registrationForm.email, {
+                label: 'Email',
+                row_attr: { class: 'form-group' },
+                attr: { placeholder: 'you@example.com', class: 'auth-input' }
+            }) }}
+            {{ form_row(registrationForm.plainPassword, {
+                label: 'Password',
+                row_attr: { class: 'form-group' },
+                attr: { class: 'auth-input' }
+            }) }}
+            {{ form_row(registrationForm.agreeTerms, {
+                row_attr: { class: 'form-check' },
+                attr: { class: 'form-check-input' },
+                label_attr: { class: 'form-check-label' }
+            }) }}
+
+            <div class="auth-card__actions">
+                <button type="submit" class="cta">Create account</button>
+                <span>Already have access? <a href="{{ path('app_login') }}">Sign in instead.</a></span>
+            </div>
+        {{ form_end(registrationForm) }}
+    </div>
+{% endblock %}

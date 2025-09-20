@@ -1,0 +1,21 @@
+{
+    "name": "maggus/guides",
+    "autoload": {
+        "psr-4": {
+            "Maggus\\Guides\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "DDEV User",
+            "email": "nobody@example.com"
+        }
+    ],
+    "require": {
+        "phpdocumentor/guides": "^1.9",
+        "phpdocumentor/guides-restructured-text": "^1.8",
+        "phpdocumentor/guides-code": "^1.7",
+        "phpdocumentor/filesystem": "^1.7",
+        "symfony/finder": "^6.4"
+    }
+}

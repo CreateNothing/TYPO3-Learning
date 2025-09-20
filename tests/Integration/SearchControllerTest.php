@@ -20,10 +20,10 @@ class SearchControllerTest extends WebTestCase
         $container = static::getContainer();
 
         $connection = $container->get(Connection::class);
-        $connection->executeStatement('TRUNCATE doc_chunk RESTART IDENTITY CASCADE');
+        $connection->executeStatement('TRUNCATE doc_chunks RESTART IDENTITY CASCADE');
 
         $connection->executeStatement(
-            'INSERT INTO doc_chunk (source_repo, doc_path, version, lang, title, anchor, content_md, created_at, embedding) VALUES (:source_repo, :doc_path, :version, :lang, :title, :anchor, :content_md, NOW(), :embedding)',
+            'INSERT INTO doc_chunks (source_repo, doc_path, version, lang, title, anchor, content_md, created_at, embedding) VALUES (:source_repo, :doc_path, :version, :lang, :title, :anchor, :content_md, NOW(), :embedding)',
             [
                 'source_repo' => 'typo3/docs',
                 'doc_path' => 'getting-started/install',

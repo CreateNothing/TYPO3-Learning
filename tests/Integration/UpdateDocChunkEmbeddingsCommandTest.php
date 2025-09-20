@@ -21,10 +21,10 @@ class UpdateDocChunkEmbeddingsCommandTest extends KernelTestCase
     {
         $container = self::getContainer();
         $connection = $container->get(Connection::class);
-        $connection->executeStatement('TRUNCATE doc_chunk RESTART IDENTITY CASCADE');
+        $connection->executeStatement('TRUNCATE doc_chunks RESTART IDENTITY CASCADE');
 
         $connection->executeStatement(
-            'INSERT INTO doc_chunk (source_repo, doc_path, version, lang, title, anchor, content_md, created_at) VALUES (:source_repo, :doc_path, :version, :lang, :title, :anchor, :content_md, NOW())',
+            'INSERT INTO doc_chunks (source_repo, doc_path, version, lang, title, anchor, content_md, created_at) VALUES (:source_repo, :doc_path, :version, :lang, :title, :anchor, :content_md, NOW())',
             [
                 'source_repo' => 'typo3/docs',
                 'doc_path' => 'search/vector',
@@ -45,7 +45,7 @@ class UpdateDocChunkEmbeddingsCommandTest extends KernelTestCase
         $tester = new CommandTester($command);
         $tester->execute(['--limit' => 1]);
 
-        $embedding = $connection->fetchOne('SELECT embedding FROM doc_chunk WHERE id = 1');
+        $embedding = $connection->fetchOne('SELECT embedding FROM doc_chunks WHERE id = 1');
         self::assertNotNull($embedding);
         self::assertStringContainsString('0.2', $embedding);
     }

@@ -4,6 +4,23 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.doc_sources:
+        typo3-reference-coreapi:
+            source_repo: 'TYPO3-Documentation/TYPO3CMS-Reference-CoreApi'
+            git_url: 'https://github.com/TYPO3-Documentation/TYPO3CMS-Reference-CoreApi.git'
+            git_ref: '13.4'
+            version: '13.4'
+            lang: 'en-us'
+            documentation_path: 'Documentation'
+            license: 'CC BY 4.0'
+        typo3-guide-installation:
+            source_repo: 'TYPO3-Documentation/TYPO3CMS-Guide-Installation'
+            git_url: 'https://github.com/TYPO3-Documentation/TYPO3CMS-Guide-Installation.git'
+            git_ref: '13.4'
+            version: '13.4'
+            lang: 'en-us'
+            documentation_path: 'Documentation'
+            license: 'CC BY 4.0'
 
 services:
     # default configuration for services in *this* file
@@ -18,3 +35,6 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    App\Service\Documentation\DocSourceRegistry:
+        arguments:
+            $rawSources: '%app.doc_sources%'

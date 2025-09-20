@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Home · TYPO3 Learning Platform{% endblock %}
+
+{% block body %}
+    <div class="pill">Release v0 Roadmap</div>
+    <h1>Level up your TYPO3 knowledge with guided challenges.</h1>
+    <p>
+        This prototype brings together TYPO3 documentation, an adaptive syllabus, and AI-assisted assessments.
+        Use the navigation to explore the upcoming battle mode and the learning workspace while we finish
+        the content ingestion pipeline.
+    </p>
+    <p>
+        Authentication is provided by Symfony Security. Create your account with the CLI user maker,
+        then sign in to unlock score tracking, duel history, and personalized study queues as we build them out.
+    </p>
+    {% if app.user %}
+        <a class="cta" href="{{ path('app_learning') }}">Continue your journey</a>
+    {% else %}
+        <a class="cta" href="{{ path('app_login') }}">Sign in to start</a>
+    {% endif %}
+{% endblock %}

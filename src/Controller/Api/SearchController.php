@@ -50,7 +50,7 @@ class SearchController extends AbstractController
                 anchor,
                 content_md,
                 embedding <-> :embedding AS distance
-            FROM doc_chunk
+            FROM doc_chunks
             WHERE embedding IS NOT NULL
             ORDER BY embedding <-> :embedding
             LIMIT :limit

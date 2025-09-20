@@ -44,6 +44,21 @@ class UpdateDocChunkEmbeddingsCommand extends Command
         $dimensionOpt = $input->getOption('dimension');
         $dimension = $dimensionOpt !== null ? (int) $dimensionOpt : null;
 
+        $processed = $this->process($batchSize, $maxToProcess, $dimension, $output, $this->embeddingModel);
+
+        $output->writeln(sprintf('<info>Embeddings updated for %d chunk(s).</info>', $processed));
+
+        return Command::SUCCESS;
+    }
+
+    public function runEmbedded(OutputInterface $output, int $batchSize, ?int $maxToProcess, string $embeddingModel, ?int $dimension = null): void
+    {
+        $processed = $this->process($batchSize, $maxToProcess, $dimension, $output, $embeddingModel);
+        $output->writeln(sprintf('<info>Embeddings updated for %d chunk(s).</info>', $processed));
+    }
+
+    private function process(int $batchSize, ?int $maxToProcess, ?int $dimension, OutputInterface $output, string $embeddingModel): int
+    {
         $processed = 0;
 
         while (true) {
@@ -53,7 +68,7 @@ class UpdateDocChunkEmbeddingsCommand extends Command
             }
 
             $rows = $this->connection->fetchAllAssociative(
-                'SELECT id, content_md FROM doc_chunk WHERE embedding IS NULL ORDER BY id ASC LIMIT :limit',
+                'SELECT id, content_md FROM doc_chunks WHERE embedding IS NULL ORDER BY id ASC LIMIT :limit',
                 ['limit' => $fetchLimit],
                 ['limit' => ParameterType::INTEGER],
             );
@@ -64,11 +79,11 @@ class UpdateDocChunkEmbeddingsCommand extends Command
 
             foreach ($rows as $row) {
                 try {
-                    $vector = $this->embeddingClient->embed($this->embeddingModel, (string) $row['content_md'], $dimension);
+                    $vector = $this->embeddingClient->embed($embeddingModel, (string) $row['content_md'], $dimension);
                     $literal = $this->vectorFormatter->toDatabaseLiteral($vector);
 
                     $this->connection->executeStatement(
-                        'UPDATE doc_chunk SET embedding = :embedding WHERE id = :id',
+                        'UPDATE doc_chunks SET embedding = :embedding WHERE id = :id',
                         [
                             'embedding' => $literal,
                             'id' => (int) $row['id'],
@@ -90,8 +105,6 @@ class UpdateDocChunkEmbeddingsCommand extends Command
             }
         }
 
-        $output->writeln(sprintf('<info>Embeddings updated for %d chunk(s).</info>', $processed));
-
-        return Command::SUCCESS;
+        return $processed;
     }
 }

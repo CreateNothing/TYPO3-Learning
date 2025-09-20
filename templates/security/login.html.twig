@@ -1,34 +1,59 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Log in!{% endblock %}
+{% block title %}Login · TYPO3 Learning Platform{% endblock %}
 
 {% block body %}
-<form method="post">
-    {% if error %}
-        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-    {% endif %}
+    <div class="pill">Member Access</div>
+    <h1>Welcome back.</h1>
+    <p>
+        Sign in with the credentials provisioned via <code>ddev console make:user</code>. Logged-in players will
+        soon track learning streaks, battle history, and personalized recommendations.
+    </p>
 
-    {% if app.user %}
-        <div class="mb-3">
-            You are logged in as {{ app.user.userIdentifier }}, <a href="{{ path('app_logout') }}">Logout</a>
+    {% for message in app.flashes('success') %}
+        <div style="margin-top: 1.25rem; padding: 0.9rem 1rem; border-radius: 0.85rem; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(74, 222, 128, 0.35); color: rgba(226, 232, 240, 0.9);">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    {% if error %}
+        <div style="margin-top: 1.5rem; padding: 0.85rem 1rem; border-radius: 0.75rem; background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(248, 113, 113, 0.4);">
+            {{ error.messageKey|trans(error.messageData, 'security') }}
         </div>
     {% endif %}
 
-    <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-    <label for="inputEmail">Email</label>
-    <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control" autocomplete="email" required autofocus>
-    <label for="inputPassword">Password</label>
-    <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password" required>
-    <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+    {% if app.user %}
+        <div style="margin-top: 1.5rem; padding: 0.75rem 1rem; border-radius: 0.75rem; background: rgba(34, 197, 94, 0.18); border: 1px solid rgba(74, 222, 128, 0.35);">
+            You are already signed in as <strong>{{ app.user.handle ?? app.user.userIdentifier }}</strong>. <a href="{{ path('app_logout') }}">Logout?</a>
+        </div>
+    {% else %}
+        <form method="post" style="margin-top: 2rem; display: grid; gap: 1.25rem;">
+            <label style="display: grid; gap: 0.45rem;">
+                <span>Email</span>
+                <input type="email" value="{{ last_username }}" name="email" autocomplete="email" required autofocus
+                    style="padding: 0.75rem 1rem; border-radius: 0.75rem; border: 1px solid rgba(148, 163, 184, 0.4); background: rgba(15, 23, 42, 0.85); color: inherit;">
+            </label>
 
-    <div class="checkbox mb-3">
-        <label>
-            <input type="checkbox" name="_remember_me"> Remember me
-        </label>
-    </div>
+            <label style="display: grid; gap: 0.45rem;">
+                <span>Password</span>
+                <input type="password" name="password" autocomplete="current-password" required
+                    style="padding: 0.75rem 1rem; border-radius: 0.75rem; border: 1px solid rgba(148, 163, 184, 0.4); background: rgba(15, 23, 42, 0.85); color: inherit;">
+            </label>
 
-    <button class="btn btn-lg btn-primary" type="submit">
-        Sign in
-    </button>
-</form>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <label style="display: inline-flex; align-items: center; gap: 0.55rem; font-size: 0.9rem; color: rgba(226, 232, 240, 0.8);">
+                <input type="checkbox" name="_remember_me" style="width: 1rem; height: 1rem;">
+                Remember me on this device
+            </label>
+
+            <button type="submit" class="cta" style="justify-content: center;">
+                Sign in
+            </button>
+        </form>
+
+        <p style="margin-top: 1.5rem; font-size: 0.95rem; color: rgba(226, 232, 240, 0.8);">
+            Need an account? <a href="{{ path('app_register') }}" style="color: rgba(96, 165, 250, 0.95); text-decoration: underline;">Create one now.</a>
+        </p>
+    {% endif %}
 {% endblock %}

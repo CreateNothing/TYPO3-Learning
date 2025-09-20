@@ -1,0 +1,19 @@
+<h1>Confirm your LearnTYPO3 account</h1>
+
+<p>
+    Welcome aboard! Finalize your registration by clicking the button below. This verifies your email and unlocks
+    personalized TYPO3 learning content.
+</p>
+
+<p style="margin: 1.5rem 0;">
+    <a href="{{ signedUrl|raw }}" style="background: #3b82f6; color: #0f172a; padding: 0.75rem 1.25rem; border-radius: 0.6rem; text-decoration: none; font-weight: 600;">
+        Confirm my email
+    </a>
+</p>
+
+<p>
+    The link expires {{ expiresAtMessageKey|trans(expiresAtMessageData, 'VerifyEmailBundle') }}. If it lapses, simply
+    sign in and request a fresh verification email.
+</p>
+
+<p>See you inside,<br>LearnTYPO3 Team</p>

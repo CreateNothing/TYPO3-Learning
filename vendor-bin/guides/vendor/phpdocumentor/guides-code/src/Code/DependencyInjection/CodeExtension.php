@@ -1,0 +1,90 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link https://phpdoc.org
+ */
+
+namespace phpDocumentor\Guides\Code\DependencyInjection;
+
+use Highlight\Highlighter as HighlightPHP;
+use phpDocumentor\Guides\Code\Highlighter\HighlightPhpHighlighter;
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
+use Symfony\Component\Config\Definition\Builder\TreeBuilder;
+use Symfony\Component\Config\Definition\ConfigurationInterface;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+
+use function assert;
+use function dirname;
+
+final class CodeExtension extends Extension implements ConfigurationInterface, PrependExtensionInterface
+{
+    public function getConfigTreeBuilder(): TreeBuilder
+    {
+        $treeBuilder = new TreeBuilder('code');
+        $rootNode = $treeBuilder->getRootNode();
+        assert($rootNode instanceof ArrayNodeDefinition);
+
+        $rootNode
+            ->fixXmlConfig('alias', 'aliases')
+            ->fixXmlConfig('language')
+            ->children()
+                ->arrayNode('aliases')
+                    ->useAttributeAsKey('name')
+                    ->normalizeKeys(false)
+                    ->scalarPrototype()->end()
+                ->end()
+                ->arrayNode('languages')
+                    ->useAttributeAsKey('name')
+                    ->normalizeKeys(false)
+                    ->scalarPrototype()->end()
+                ->end()
+            ->end();
+
+        return $treeBuilder;
+    }
+
+    /** @param mixed[] $configs */
+    public function load(array $configs, ContainerBuilder $container): void
+    {
+        $configuration = $this->getConfiguration($configs, $container);
+        $config = $this->processConfiguration($configuration, $configs);
+        $loader = new PhpFileLoader(
+            $container,
+            new FileLocator(dirname(__DIR__, 3) . '/resources/config'),
+        );
+
+        $loader->load('guides-code.php');
+
+        $container->getDefinition(HighlightPhpHighlighter::class)
+            ->replaceArgument('$languageAliases', $config['aliases'] ?? []);
+
+        $highlighter = $container->getDefinition(HighlightPHP::class);
+        foreach ($config['languages'] ?? [] as $name => $definitionFilePath) {
+            $highlighter->addMethodCall('registerLanguage', [$name, $definitionFilePath, true]);
+        }
+    }
+
+    /** @param mixed[] $config */
+    public function getConfiguration(array $config, ContainerBuilder $container): ConfigurationInterface
+    {
+        return $this;
+    }
+
+    public function prepend(ContainerBuilder $container): void
+    {
+        $container->prependExtensionConfig('guides', [
+            'base_template_paths' => [dirname(__DIR__, 3) . '/resources/template/html'],
+        ]);
+    }
+}
